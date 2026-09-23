@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Loading data into R, data transformation, and summary statistics
 
 **Your name:**
-
+Wil Gamble
 **Overview and lab criteria:**
 
 This lab is intended to assess your ability to use R to load data and to generate basic descriptive statistics. For this lab to be marked complete, the following criteria must be met:
@@ -74,6 +74,13 @@ There are a lot of observations here, 452,448 to be exact. To get a better grasp
 ```{r}
 #| label: task1
 
+Min_Temp_Daymet<-daymet_data%>%
+  group_by(state,region,cty_name,year)%>%
+  summarise(median_of_tmin=mean(median_tmin))
+
+
+kable(head(Min_Temp_Daymet))
+
 # Your code goes here
 ```
 
@@ -83,6 +90,13 @@ There are a lot of observations here, 452,448 to be exact. To get a better grasp
 
 ```{r}
 #| label: task2
+
+South_Region_tmin_mean<-daymet_data%>%
+  filter(region=="South Region")%>%
+  group_by(state,region,year)%>%
+  summarise(median_of_tmin=mean(median_tmin))
+
+kable(head(South_Region_tmin_mean))
 
 # Your code goes here
 ```
@@ -94,6 +108,12 @@ There are a lot of observations here, 452,448 to be exact. To get a better grasp
 ```{r}
 #| label: task3
 
+ggplot(South_Region_tmin_mean,
+       aes(x=median_of_tmin,
+           y=state,
+           color=state))+
+  geom_line()
+
 # Your code goes here
 ```
 
@@ -103,6 +123,14 @@ There are a lot of observations here, 452,448 to be exact. To get a better grasp
 
 ```{r}
 #| label: task4
+
+South_Region_tmin_mean_Wide<-South_Region_tmin_mean%>%
+  pivot_wider(names_from=state,
+              values_from=median_of_tmin)
+  
+
+kable(South_Region_tmin_mean_Wide)
+  
 
 # Your code goes here
 ```
@@ -114,12 +142,32 @@ There are a lot of observations here, 452,448 to be exact. To get a better grasp
 ```{r}
 #| label: task5
 
+Mean_Temp_Precip<-daymet_data%>%
+  filter(year=="Y2015")%>%
+   group_by(state,region)%>%
+  summarise(mean_of_tmax=mean(median_tmax), 
+            mean_prcp=mean(sum_prcp))
+
+ggplot(Mean_Temp_Precip,
+       aes(x=mean_of_tmax,
+           y=mean_prcp,
+         color=region))+
+  geom_point()
+
+
 # Your code goes here
 ```
 
 ## Task 6
 
 *In the space below, explain what each function in your code for task 5 does to the dataset in plain English.*
+
+The first function of the code is creating a new object that will transfer alterations to a new name.
+That is Mean_Temp_Precip<-daymet_data. The %<% is a "pipe". I understand it as a separation for a new function 
+to be run. It gives the code a sequence of events. filter() is used to denote what from a column we want to keep and be used in our data set. You start with the column header then equal it to the column variable you want. group_by() takes a whole column and transfers it to the new object. summarize() allows you to create a new column/data frame that at the same time can perform a function like average, mean, etc. summarise(median_of_tmax=mean(median_tmax) creates a new column called "median_of_tmax" based on mean data from the existing column "median_tmax".   
+
+ggplot() is used to create/alter different graphs. You start with the newly (or any) data set created. The aes function can then be used to tell ggplot what columns are going to control the graph. You can then decide the x/y axis using x=, y=. The color= function will make the data of a certain column different colors. Ones that share a name will be the same color. geom_point() is what visualizes all that is above into a scatter plot. There are multiple geom_blanks() that provide different graphs. 
+
 
 *Your response here.*
 
@@ -143,6 +191,14 @@ state_2015 <- daymet_data %>%
 
 {Your response here}
 
+The across function appears to remove the need to type out the new individual names and mean function each time. The across(
+      c(median_tmax, sum_prcp),
+      mean 
+is making the code take the mean of the existing columns named in c().
+      na.rm = TRUE
+prevents na values from preventing the formation of columns properly. It will tell R to ignore NA values. This allows the mean calculation to be performed without interference. 
+      .names = "mean_{.col}
+adds mean_ to the start of median_tmax, and sum_prcp. For just 2 columns, it is not too useful here. If I needed to deal with 50 columns, I could see the value.
 
 ## Challenge Question
 
@@ -152,11 +208,32 @@ In addition to this code, write a short summary of a pattern that's evident in t
 
 ```{r}
 #| label: challenge
+library(daymetr)
 
+terrell_daymet<-download_daymet(site="terrell County, Ga",lat=31.77,lon=-84.43,start=2010,end=2020,internal=TRUE)
+
+Terrell_data<-terrell_daymet$data
+
+
+Terrell_Mean_Mtemp_precip_2016<-Terrell_data%>%
+  filter(year=="2016")%>%
+   select(yday,tmax..deg.c.,prcp..mm.day.)
+
+ggplot(Terrell_Mean_Mtemp_precip_2016,
+       aes(x=tmax..deg.c.,
+           y=prcp..mm.day.,
+         color=tmax..deg.c.,
+         ))+
+  geom_line()
+  
 # Your code goes here
 ```
 
 *Explanation goes here.*
+
+For my graph, I wanted to see if there was a pattern between hotter temperatures and more precipitation in 2016. Really it ended up showing that 1. Terrell is either boom or bust for precipitation and 2. It rains more in the fall/spring than the summer/winter. Most of the rainfall is concentrated in the middle of the graph which is where temperatures are at their least extreme. The highest rains are around 66-80 degrees which makes sense. That is the temp range for May. It gets pretty wet then from my memory and a quick Google search corroborated that. 
+
+http://weather.uga.edu/mindex.php?variable=AV&site=DAWSON (Dawson=terrell county)
 
 ## Final Submission Stuff
 
@@ -164,10 +241,15 @@ In addition to this code, write a short summary of a pattern that's evident in t
 
 Besides class materials, what other sources of assistance did you use while completing this lab? These can include input from classmates, relevant material identified through web searches (e.g., Stack Overflow), or assistance from ChatGPT or other AI tools. How did these sources support your own learning in completing this lab?
 
+This lab I mainly used ChatGPT, when I popped an error code. My most common mistake was finding a similar chunk in a script but forgetting to place a %>% in my code. It would say for example "object 'median_of_tmin' not found". I scrambled trying to figure it out, but it was just the lack of a pipe. You helped me quite a bit, when I had all the na data in task 4. I just did not follow task 2 correctly which led to a wrong answer down the line. I tried group_by() for the challenge question but it gave me too many variables. CHATgpt told me to use select instead. I now understand group_by() is for keeping summarize together with certain columns. Select just lets you pick out certain columns. 
 *Response here.*
 
 ### Lab Reflection
 
 How do you feel about the work you did on this lab? Was it easy, moderate, or hard? What are the biggest things you learned by completing it?
+
+This lab was easier than the first to me. I mainly focused on using script 10 and 8 to understand how the different code chunks needed to be formatted. I have better notes now too which helps. I did not have to use much generative A.I this time. If I have a template, I can normally figure out what to do. Some errors would have been a headache to solve without it though.  I would give this one a moderate compared to lab one's hard. Focusing on the scripts helped. 
+
+The challenge question was not to bad once I found what I needed in script 3. It was mostly just taking earlier code after that. 
 
 *Your response here.*
